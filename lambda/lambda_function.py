@@ -69,6 +69,9 @@ def lambda_handler(event, context):
         for campo in campos_obrigatorios:
             df_transform = df_transform[df_transform[campo].astype(str).str.strip() != '']
 
+        # Ordenar pela coluna "Categoria"
+        df_transform = df_transform.sort_values(by='Categoria')
+
         # Convertendo para CSV
         output_buffer = io.BytesIO()
         df_transform.to_csv(output_buffer, index=False)
