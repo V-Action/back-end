@@ -48,19 +48,30 @@ def lambda_handler(event, context):
         file_content = s3_response['Body'].read()
 
         # Lê o CSV com Pandas
-        df = pd.read_csv(io.BytesIO(file_content))
+        df_transform = pd.read_csv(io.BytesIO(file_content))
 
         ''' 🔹 Tratamento de dados '''
-        df_nan = df.dropna()
-        df_nan['Data_Solicitacao'] = pd.to_datetime(df_nan['Data_Solicitacao'], format='%d/%m/%Y')
-        df_nan['Ano_Solicitacao'] = df_nan['Data_Solicitacao'].dt.year
-        df_prioridade = df_nan[
-            (df_nan['Ano_Solicitacao'] > 2023) & (df_nan['Observacoes'] == 'Urgente')
-        ]
+        # Formatar o campo de data para datetime do pandas
+        df_transform['Created at'] = pd.to_datetime(df_transform['Created at'], errors='coerce')
+
+        # Formatar o "Nome do solicitante" para deixar cada palavra com inicial maiúscula
+        df_transform['Nome do solicitante'] = df_transform['Nome do solicitante'].str.title()
+
+        # Deixar os e-mails minúsculos
+        df_transform['Email do solicitante'] = df_transform['Email do solicitante'].str.lower()
+
+        # Padronizar a categoria (strip e capitalize)
+        df_transform['Categoria'] = df_transform['Categoria'].str.strip().str.capitalize()
+
+        # Validar campos obrigatórios
+        campos_obrigatorios = ['Categoria', 'Email do solicitante', 'Nome do solicitante', 'Título']
+        df_transform = df_transform.dropna(subset=campos_obrigatorios)
+        for campo in campos_obrigatorios:
+            df_transform = df_transform[df_transform[campo].astype(str).str.strip() != '']
 
         # Convertendo para CSV
         output_buffer = io.BytesIO()
-        df_prioridade.to_csv(output_buffer, index=False)
+        df_transform.to_csv(output_buffer, index=False)
         output_buffer.seek(0)
 
         # Salvando no bucket de destino
