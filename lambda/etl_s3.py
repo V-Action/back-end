@@ -3,6 +3,12 @@ import pandas as pd
 import io
 import os
 
+
+bucket_destino = os.environ.get('BUCKET_DESTINO','')
+sns_topic_arn = os.environ.get('SNS_TOPIC_ARN','')
+email_list_str = os.environ.get('EMAIL_LIST','')
+email_list = email_list_str.split(',')
+
 # SNS
 sns_client = boto3.client('sns')
 
@@ -13,7 +19,7 @@ def lambda_handler(event, context):
     record = event['Records'][0]
     bucket_raw = record['s3']['bucket']['name']
     file_key = record['s3']['object']['key']
-    bucket_trusted = "trusted-bucket-vaction"
+    bucket_trusted = bucket_destino
 
     resultado = {
         "status": "Sucesso",
@@ -74,17 +80,31 @@ def lambda_handler(event, context):
 
         print(f"Arquivo {file_key} processado e salvo no bucket {bucket_trusted}")
 
-        sns_client.publish(
-            TopicArn='arn:aws:sns:us-east-1:352018330377:email-vaction',
-            Message=mensagem_formatada_sucesso,
-            Subject='[Notificação Lambda] Sucesso na execução'
+        for email in email_list:
+            sns_client.publish(
+                TopicArn=sns_topic_arn,
+                Message=f"Arquivo {file_key} processado e salvo no bucket {bucket_trusted}",
+                Subject="Arquivo processado",
+                MessageAttributes={
+                    'email':{
+                        'DataType': 'String',
+                        'StringValue': email
+                    }
+                } 
         )
 
     except Exception as e:
         print(f"Erro ao processar o arquivo {file_key}: {str(e)}")
 
-        sns_client.publish(
-            TopicArn='arn:aws:sns:us-east-1:352018330377:email-vaction',
-            Message=mensagem_formatada_erro,
-            Subject='[Notificação Lambda] Falha na execução'
+        for email in email_list:
+            sns_client.publish(
+                TopicArn=sns_topic_arn,
+                Message=f"Arquivo {file_key} processado com erro: {str(e)}",
+                Subject="Arquivo processado com erro",
+                MessageAttributes={
+                    'email':{
+                        'DataType': 'String',
+                        'StringValue': email
+                    }
+                } 
         )

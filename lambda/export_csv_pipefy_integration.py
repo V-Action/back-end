@@ -3,11 +3,13 @@ import requests
 import pandas as pd
 import boto3
 from io import StringIO
+
 PIPEFY_API_URL = "https://api.pipefy.com/graphql"
 PIPEFY_TOKEN = "eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJQaXBlZnkiLCJpYXQiOjE3NDc1OTAxNzAsImp0aSI6IjQ5OTg2NjFhLWJhMmUtNGM2Zi1hMzgyLWExZGNmOWRkZTM1ZSIsInN1YiI6MzA0NDczNjA1LCJ1c2VyIjp7ImlkIjozMDQ0NzM2MDUsImVtYWlsIjoiZ2FicmllbC5iZHVhcnRlQHNwdGVjaC5zY2hvb2wifX0.RidLt5H80JX7SaRbxWht3lTGmBW81wYiQAs-hPNJ9am_T-r9-oybTeC6ZuxY0JwviOetgqSh4hnlg5MTK_NDyQ"  
 PIPE_ID = 306351004
-S3_BUCKET = "raw-bucket-vaction-1030"
+S3_BUCKET = os.environ.get('BUCKET_ENTRADA','')
 CSV_FILE_NAME = "vaction-poc.csv"
+
 def lambda_handler(event, context):
     query = """
     query {
@@ -61,6 +63,7 @@ def lambda_handler(event, context):
     csv_buffer = StringIO()
     df.to_csv(csv_buffer, index=False)
     # Enviar para o S3
+    print(f"Arquivo do pipefy {CSV_FILE_NAME} processado e salvo no bucket {S3_BUCKET}")
     s3 = boto3.client("s3")
     s3.put_object(
         Bucket=S3_BUCKET,
