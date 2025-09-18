@@ -12,8 +12,8 @@ enum class DecisaoNome(val descricao: String) {
 
     fun toStatus(): Status {
         return when(this) {
-            APROVADO -> Status(id = 1, StatusNome.APROVADO)
-            REPROVADO -> Status(id = 2, StatusNome.REPROVADO)
+            APROVADO -> Status(id = 3, StatusNome.APROVADO)
+            REPROVADO -> Status(id = 4, StatusNome.REPROVADO)
         }
     }
 }
