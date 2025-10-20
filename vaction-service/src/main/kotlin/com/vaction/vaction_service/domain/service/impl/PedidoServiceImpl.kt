@@ -1,7 +1,9 @@
 package com.vaction.vaction_service.domain.service.impl
 
+import com.vaction.vaction_service.application.dto.response.PedidoResponse
 import com.vaction.vaction_service.domain.model.entity.Pedido
 import com.vaction.vaction_service.domain.model.entity.Status
+import com.vaction.vaction_service.domain.model.enums.StatusNome
 import com.vaction.vaction_service.domain.repository.PedidoRepository
 import com.vaction.vaction_service.domain.service.PedidoService
 import org.springframework.stereotype.Service
@@ -21,5 +23,13 @@ class PedidoServiceImpl(
     override fun atualizaStatusPedido(id: Int, status: Status): Int {
         val pedido = pedidoRepository.atualizaStatusPeloId(id, status)
         return pedido
+    }
+
+    override fun buscaPedidosAprovadosPorUsuario(id: Int): List<Pedido> {
+        return pedidoRepository.buscaPedidosAprovadosPorUsuario(id, 4)
+    }
+
+    override fun buscaPedidoPorUsuarioOuStatus(id: Int, status: StatusNome?): List<Pedido> {
+        return pedidoRepository.buscaPedidoPorUsuarioOuStatus(id, status)
     }
 }

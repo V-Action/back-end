@@ -26,6 +26,8 @@ data class Pedido(
     @field:NotNull
     val dataSolicitacao: LocalDate? = LocalDate.now(),
 
+    var diasUsufruidos: Int?,
+
     @field:JsonFormat(pattern = "yyyy-MM-dd")
     var ultimaAtualizacao: LocalDate? = LocalDate.now(),
 

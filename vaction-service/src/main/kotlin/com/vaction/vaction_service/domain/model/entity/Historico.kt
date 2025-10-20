@@ -25,6 +25,7 @@ data class  Historico(
     @field:JoinColumn(name = "fk_pedido")
     val pedido: Pedido?,
 
+    val diasUsufruidos: Int?,
 
     @OnDelete(action = OnDeleteAction.CASCADE)
     @ManyToOne(fetch = FetchType.EAGER)

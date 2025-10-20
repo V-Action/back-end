@@ -37,8 +37,6 @@ data class Usuario(
 
     var senha: String?,
 
-    var saldoFerias: Double? = 0.0,
-
     @OnDelete(action = OnDeleteAction.CASCADE)
     @field:ManyToOne
     @field:JoinColumn(name = "fk_empresa")

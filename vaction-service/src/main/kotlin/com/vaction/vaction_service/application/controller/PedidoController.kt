@@ -2,6 +2,7 @@ package com.vaction.vaction_service.application.controller
 
 
 import com.vaction.vaction_service.application.dto.response.PedidoAtualizadoResponse
+import com.vaction.vaction_service.application.dto.response.PedidoResponse
 import com.vaction.vaction_service.domain.model.entity.Historico
 import com.vaction.vaction_service.domain.model.entity.Pedido
 import com.vaction.vaction_service.domain.model.entity.Status
@@ -10,6 +11,7 @@ import com.vaction.vaction_service.domain.model.enums.NivelAcessoNome
 import com.vaction.vaction_service.domain.model.enums.StatusNome
 import com.vaction.vaction_service.domain.service.HistoricoService
 import com.vaction.vaction_service.domain.service.PedidoService
+import com.vaction.vaction_service.domain.service.UsuarioService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -24,17 +26,18 @@ import org.springframework.web.server.ResponseStatusException
 @RequestMapping("/pedido")
 class PedidoController(
     val pedidoService: PedidoService,
-    val historicoService: HistoricoService
+    val historicoService: HistoricoService,
+    val usuarioService: UsuarioService
 ) {
 
     @Operation(
-        summary = "Autentique o usuário",
+        summary = "Solicitar o pedido",
         description = "Autentique o usuário com base no tipo dele (aluno, professor ou representante legal)."
     )
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "201", description = "Pedido feito com sucesso"),
-            ApiResponse(responseCode = "403", description = "Erro no pedido"),
+            ApiResponse(responseCode = "403", description = "Erro no pedido, saldo de férias indísponivel"),
             ApiResponse(responseCode = "401", description = "Erro no nível de acesso")
         ]
     )
@@ -45,7 +48,19 @@ class PedidoController(
         @Valid @RequestBody pedido: Pedido
     ): ResponseEntity<Pedido> {
         try {
+            if(pedido.usuario == null){
+                throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Faltando usuario no pedido")
+            }
             pedido.status = Status(id=1, nome = StatusNome.PENDENTE_GESTOR)
+            val usuario = usuarioService.buscaPorId(pedido.usuario!!.id!!)
+            val pedidosAprovados = pedidoService.buscaPedidosAprovadosPorUsuario(usuario.id!!)
+            val saldoFerias = usuarioService.calculaSaldoFerias(usuario, pedidosAprovados)
+            val diasUsufruidos = pedido.dataFim!!.toEpochDay() - pedido.dataInicio!!.toEpochDay() + 1
+
+            if(diasUsufruidos > saldoFerias){
+                throw ResponseStatusException(HttpStatus.FORBIDDEN, "Saldo de férias insuficiente")
+            }
+            pedido.diasUsufruidos = diasUsufruidos.toInt()
             val novoPedido = pedidoService.solicitar(pedido)
             return ResponseEntity.status(201).body(novoPedido)
 
@@ -73,7 +88,7 @@ class PedidoController(
 
         return ResponseEntity.status(200).body(listaPedidos)
     }
-/*
+
     @Operation(summary = "Busque os pedidos pelo professor", description = "Busque todos os pedidos.")
     @ApiResponses(
         value = [
@@ -81,19 +96,24 @@ class PedidoController(
             ApiResponse(responseCode = "204", description = "Nenhum pedido encontrado")
         ]
     )
-    @GetMapping("/{id}")
+    @GetMapping("/usuario/{id}")
     @CrossOrigin
-    fun buscaPedidoPeloProfessor(@RequestBody status: StatusNome): ResponseEntity<List<Pedido>> {
+    fun buscaPedidoPeloUsuario(@PathVariable id: Int, @RequestBody statusRequest: Map<String, String>?): ResponseEntity<List<Pedido>> {
 
-        val listaUsuarios = usuarioService.buscaPorAprovador()
+        val status = statusRequest?.get("status")
+        val statusEnum = try {
+            status?.let { StatusNome.valueOf(it) }
+        } catch (e: IllegalArgumentException) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Status inválido")
+        }
+        val listaPedidos = pedidoService.buscaPedidoPorUsuarioOuStatus(id, statusEnum)
 
-        if (listaUsuarios.isEmpty()) {
+        if (listaPedidos.isEmpty()) {
             throw ResponseStatusException(HttpStatus.NO_CONTENT)
         }
 
-        return ResponseEntity.status(200).body(listaUsuarios)
+        return ResponseEntity.status(200).body(listaPedidos)
     }
- */
 
     @Operation(summary = "Busque os pedidos", description = "Busque todos os pedidos.")
     @ApiResponses(
