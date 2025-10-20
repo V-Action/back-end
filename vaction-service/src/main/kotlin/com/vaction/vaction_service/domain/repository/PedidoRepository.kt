@@ -1,6 +1,6 @@
 package com.vaction.vaction_service.domain.repository
 
-import com.vaction.vaction_service.application.dto.response.PedidoResponse
+
 import com.vaction.vaction_service.domain.model.entity.Pedido
 import com.vaction.vaction_service.domain.model.entity.Status
 import com.vaction.vaction_service.domain.model.enums.StatusNome

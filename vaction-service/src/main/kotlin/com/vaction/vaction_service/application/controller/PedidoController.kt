@@ -2,7 +2,6 @@ package com.vaction.vaction_service.application.controller
 
 
 import com.vaction.vaction_service.application.dto.response.PedidoAtualizadoResponse
-import com.vaction.vaction_service.application.dto.response.PedidoResponse
 import com.vaction.vaction_service.domain.model.entity.Historico
 import com.vaction.vaction_service.domain.model.entity.Pedido
 import com.vaction.vaction_service.domain.model.entity.Status

@@ -1,6 +1,5 @@
 package com.vaction.vaction_service.domain.service.impl
 
-import com.vaction.vaction_service.domain.model.entity.Historico
 import com.vaction.vaction_service.domain.model.entity.Pedido
 import com.vaction.vaction_service.domain.model.entity.Usuario
 import com.vaction.vaction_service.domain.repository.UsuarioRepository
