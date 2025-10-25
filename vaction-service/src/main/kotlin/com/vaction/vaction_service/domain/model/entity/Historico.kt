@@ -8,7 +8,7 @@ import org.hibernate.annotations.OnDeleteAction
 import java.time.LocalDate
 
 @Entity
-data class  Historico(
+data class Historico(
     @field:Id
     @field:GeneratedValue(strategy = GenerationType.IDENTITY)
     @field:Column(name = "id_alteracao")
@@ -24,8 +24,6 @@ data class  Historico(
     @field:ManyToOne
     @field:JoinColumn(name = "fk_pedido")
     val pedido: Pedido?,
-
-    val diasUsufruidos: Int?,
 
     @OnDelete(action = OnDeleteAction.CASCADE)
     @ManyToOne(fetch = FetchType.EAGER)

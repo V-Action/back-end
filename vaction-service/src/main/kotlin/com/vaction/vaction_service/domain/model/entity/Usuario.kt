@@ -27,6 +27,8 @@ data class Usuario(
 
     var dataAdmissao: LocalDate?,
 
+    var autenticado: Boolean? = false,
+
     var cargo: String?,
 
     var area: String?,
