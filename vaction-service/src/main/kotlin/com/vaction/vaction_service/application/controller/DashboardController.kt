@@ -13,7 +13,7 @@ class DashboardController (
     val pedidoService: PedidoService
 ){
     @CrossOrigin
-    @GetMapping("/saldo-ferias")
+    @GetMapping("/saldo-ferias/{id}")
     fun buscaUsuariosNovoPelaDataCorte(
         @PathVariable id: Int
     ): ResponseEntity<Int> {
@@ -25,7 +25,7 @@ class DashboardController (
     }
 
     @CrossOrigin
-    @GetMapping("/ultima-solicitacao")
+    @GetMapping("/ultima-solicitacao/{id}")
     fun buscaUltimaSolicitacao(
         @PathVariable id: Int
     ): ResponseEntity<Pedido> {
