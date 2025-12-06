@@ -5,4 +5,7 @@ import com.vaction.vaction_service.domain.model.entity.Pedido
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface HistoricoRepository : JpaRepository <Historico, Int> {
+    fun findTop3ByUsuario_IdOrderByDataAlteracaoDesc(idUsuario: Int): List<Historico>
+
+
 }

@@ -35,6 +35,16 @@ class UsuarioController(
         ]
     )
 
+    @GetMapping("/{id}")
+    @CrossOrigin
+    fun buscaUsuarioPorId(
+        @PathVariable id: Int
+    ): ResponseEntity<UsuarioResponse> {
+        val usuario = usuarioService.buscaPorId(id)
+        val response = usuarioService.retornaUsuario(usuario)
+        return ResponseEntity.status(200).body(response)
+    }
+
     @PostMapping("/autenticar")
     @CrossOrigin
     fun autenticarUsuario(
