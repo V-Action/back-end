@@ -5,6 +5,7 @@ import jakarta.transaction.Transactional
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
+import java.time.LocalDate
 
 interface UsuarioRepository : JpaRepository <Usuario, Int> {
 
@@ -19,4 +20,22 @@ interface UsuarioRepository : JpaRepository <Usuario, Int> {
     @Modifying
     @Query("update Usuario u set u.autenticado = false where u.id = :id")
     fun desautenticar(id: Int?): Int
+    
+    @Transactional
+    @Modifying
+    @Query("""
+        update Usuario u 
+        set u.cargo = :cargo,
+            u.area = :area,
+            u.dataAdmissao = :dataAdmissao,
+            u.senha = :senha
+        where u.id = :id
+    """)
+    fun atualizaCamposMutaveis(
+        id: Int,
+        cargo: String?,
+        area: String?,
+        dataAdmissao: LocalDate?,
+        senha: String?
+    ): Int
 }

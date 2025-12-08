@@ -57,16 +57,31 @@ class UsuarioServiceImpl(
         if (usuarioExistente.isEmpty) {
             throw ResponseStatusException(HttpStatusCode.valueOf(404)) // Status 404 Not Found
         }
-        if (novoUsuario.senha == null) {
-            novoUsuario.senha = usuarioExistente.get().senha
-        } else if (novoUsuario.senha != usuarioExistente.get().senha) {
-            throw ResponseStatusException(HttpStatusCode.valueOf(401))
+        
+        val usuarioAntigo = usuarioExistente.get()
+        
+        // Armazena a senha em variável local para permitir smart cast
+        val senhaInformada = novoUsuario.senha
+        
+        // Determina qual senha usar: se não foi informada (null ou vazia), mantém a senha antiga
+        val senhaFinal = when {
+            senhaInformada == null -> usuarioAntigo.senha
+            senhaInformada.isBlank() -> usuarioAntigo.senha
+            else -> senhaInformada // Nova senha informada
         }
 
-        novoUsuario.autenticado = usuarioExistente.get().autenticado;
+        // Usa query UPDATE para atualizar apenas campos mutáveis (evita validação de campos imutáveis)
+        usuarioRepository.atualizaCamposMutaveis(
+            id = novoUsuario.id!!,
+            cargo = novoUsuario.cargo ?: usuarioAntigo.cargo,
+            area = novoUsuario.area ?: usuarioAntigo.area,
+            dataAdmissao = novoUsuario.dataAdmissao ?: usuarioAntigo.dataAdmissao,
+            senha = senhaFinal
+        )
 
-        val usuario = usuarioRepository.save(novoUsuario)
-        val usuarioResponse = retornaUsuario(usuario)
+        // Busca o usuário atualizado para retornar
+        val usuarioAtualizado = usuarioRepository.findById(novoUsuario.id!!).get()
+        val usuarioResponse = retornaUsuario(usuarioAtualizado)
         return usuarioResponse
     }
 

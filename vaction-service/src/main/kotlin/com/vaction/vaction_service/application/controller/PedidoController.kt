@@ -97,18 +97,20 @@ class PedidoController(
     )
     @GetMapping("/usuario/{id}")
     @CrossOrigin
-    fun buscaPedidoPeloUsuario(@PathVariable id: Int, @RequestBody statusRequest: Map<String, String>?): ResponseEntity<List<Pedido>> {
+    fun buscaPedidoPeloUsuario(
+        @PathVariable id: Int,
+        @RequestParam(required = false) status: String?
+    ): ResponseEntity<List<Pedido>> {
 
-        val status = statusRequest?.get("status")
         val statusEnum = try {
             status?.let { StatusNome.valueOf(it) }
         } catch (e: IllegalArgumentException) {
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Status inválido")
+            null
         }
         val listaPedidos = pedidoService.buscaPedidoPorUsuarioOuStatus(id, statusEnum)
 
         if (listaPedidos.isEmpty()) {
-            throw ResponseStatusException(HttpStatus.NO_CONTENT)
+            return ResponseEntity.status(204).body(emptyList())
         }
 
         return ResponseEntity.status(200).body(listaPedidos)
@@ -125,15 +127,42 @@ class PedidoController(
     @CrossOrigin
     fun atualizaStatusPedido( @Valid @RequestBody pedidoAtualizado: Historico): ResponseEntity<PedidoAtualizadoResponse> {
 
-        val historico = historicoService.salvaHistorico(pedidoAtualizado)
+        // Busca o usuário completo do banco para ter acesso ao nivelAcesso
+        val usuarioId = pedidoAtualizado.usuario?.id
+        if (usuarioId == null) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuário não informado")
+        }
+        val usuarioCompleto = usuarioService.buscaPorId(usuarioId)
+        
+        // Busca o pedido completo
+        val pedidoId = pedidoAtualizado.pedido?.id
+        if (pedidoId == null) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Pedido não informado")
+        }
+        val pedidoCompleto = pedidoService.buscaPedidoPorId(pedidoId)
+        
+        // Cria o histórico com os objetos completos
+        val historicoCompleto = pedidoAtualizado.copy(
+            usuario = usuarioCompleto,
+            pedido = pedidoCompleto
+        )
+        
+        val historico = historicoService.salvaHistorico(historicoCompleto)
 
         val updated: Int;
         val statusFinal: StatusNome;
         if(historico.usuario?.nivelAcesso?.nome == NivelAcessoNome.GESTOR){
-            updated = pedidoService.atualizaStatusPedido(historico.pedido?.id!!, Status(id=2, nome = StatusNome.PENDENTE_RH))
-            statusFinal = if(historico.decisao?.nome == DecisaoNome.APROVADO) StatusNome.PENDENTE_RH else StatusNome.PENDENTE_GESTOR
+            // GESTOR: se aprovar vai para PENDENTE_RH, se rejeitar vai para REPROVADO
+            if(historico.decisao?.nome == DecisaoNome.APROVADO) {
+                updated = pedidoService.atualizaStatusPedido(historico.pedido?.id!!, Status(id=2, nome = StatusNome.PENDENTE_RH))
+                statusFinal = StatusNome.PENDENTE_RH
+            } else {
+                updated = pedidoService.atualizaStatusPedido(historico.pedido?.id!!, Status(id=4, nome = StatusNome.REPROVADO))
+                statusFinal = StatusNome.REPROVADO
+            }
 
         } else if(historico.usuario?.nivelAcesso?.nome == NivelAcessoNome.RH){
+            // RH: se aprovar vai para APROVADO, se rejeitar vai para REPROVADO
             val updated = pedidoService.atualizaStatusPedido(historico.pedido?.id!!, historico.decisao?.nome!!.toStatus())
             statusFinal = if(historico.decisao?.nome == DecisaoNome.APROVADO) StatusNome.APROVADO else StatusNome.REPROVADO
 
@@ -148,5 +177,43 @@ class PedidoController(
             decisao = historico.decisao,
             statusPedido = statusFinal
         ))
+    }
+
+    @Operation(summary = "Busque pedidos aprovados para o calendário", description = "Retorna pedidos aprovados filtrados por nível de acesso do usuário.")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Pedidos buscados com sucesso"),
+            ApiResponse(responseCode = "204", description = "Nenhum pedido encontrado")
+        ]
+    )
+    @GetMapping("/calendario/{usuarioId}")
+    @CrossOrigin
+    fun buscaPedidosCalendario(@PathVariable usuarioId: Int): ResponseEntity<List<Pedido>> {
+        val listaPedidos = pedidoService.buscaPedidosCalendarioPorUsuario(usuarioId)
+
+        if (listaPedidos.isEmpty()) {
+            return ResponseEntity.status(204).body(emptyList())
+        }
+
+        return ResponseEntity.status(200).body(listaPedidos)
+    }
+
+    @Operation(summary = "Busque pedidos pendentes para aprovação", description = "Retorna pedidos pendentes conforme nível de acesso: GESTOR vê PENDENTE_GESTOR da equipe, RH vê PENDENTE_RH.")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Pedidos buscados com sucesso"),
+            ApiResponse(responseCode = "204", description = "Nenhum pedido encontrado")
+        ]
+    )
+    @GetMapping("/pendentes/{usuarioId}")
+    @CrossOrigin
+    fun buscaPedidosPendentes(@PathVariable usuarioId: Int): ResponseEntity<List<Pedido>> {
+        val listaPedidos = pedidoService.buscaPedidosPendentesPorUsuario(usuarioId)
+
+        if (listaPedidos.isEmpty()) {
+            return ResponseEntity.status(204).body(emptyList())
+        }
+
+        return ResponseEntity.status(200).body(listaPedidos)
     }
 }

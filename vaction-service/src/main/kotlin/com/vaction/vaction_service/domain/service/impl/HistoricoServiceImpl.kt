@@ -21,7 +21,8 @@ class HistoricoServiceImpl(
     }
 
     override fun buscarUltimosPorUsuario(idUsuario: Int): List<Historico> {
-        return historicoRepository.findTop3ByUsuario_IdOrderByDataAlteracaoDesc(idUsuario)
+        val historicos = historicoRepository.findTop5ByPedidoUsuarioIdOrderByDataAlteracaoDesc(idUsuario)
+        return historicos.take(2)
     }
 
 

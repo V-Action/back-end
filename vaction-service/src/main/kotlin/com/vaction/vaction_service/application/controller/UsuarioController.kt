@@ -141,11 +141,6 @@ class UsuarioController(
         @RequestBody novoUsuario: Usuario
     ): ResponseEntity<UsuarioResponse> {
         if (usuarioRepository.existsById(id)) {
-            val usuarioAntigo = usuarioRepository.findById(id).get()
-
-            if (usuarioAntigo.nivelAcesso!!.id !== novoUsuario.nivelAcesso!!.id) return ResponseEntity.status(401)
-                .build()
-
             novoUsuario.id = id
             val usuarioEditado = usuarioService.edita(novoUsuario)
             return ResponseEntity.status(200).body(usuarioEditado)

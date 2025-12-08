@@ -15,9 +15,6 @@ data class Usuario(
     @field:Column(name = "id_usuario")
     var id: Int? = null,
 
-    @field:Past
-    @field:NotNull
-    @field:JsonFormat(pattern = "yyyy-MM-dd")
     @field:NotNull
     val nome: String?,
 
